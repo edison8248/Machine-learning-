@@ -1,0 +1,61 @@
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# load and data set
+iris = load_iris()
+X = iris.data
+y = iris.target
+target_names = iris.target_names
+
+# 2. Preprocessing: train-test split and normalization
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 3. Define models to compare
+models = {
+    "Logistic Regression": LogisticRegression(max_iter=200),
+    "Decision Tree": DecisionTreeClassifier(),
+    "KNN": KNeighborsClassifier(),
+    "SVM": SVC()
+}
+
+# 4. Train and evaluate models
+results = {}
+for name, model in models.items():
+    model.fit(X_train_scaled, y_train)
+    y_pred = model.predict(X_test_scaled)
+    acc = accuracy_score(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred)
+    cr = classification_report(y_test, y_pred, target_names=target_names, output_dict=True)
+    results[name] = {'accuracy': acc, 'confusion_matrix': cm, 'classification_report': cr}
+
+# 5. Print and visualize results
+for name, result in results.items():
+    print(f"\n===== {name} =====")
+    print(f"Accuracy: {result['accuracy'] * 100:.2f}%")
+    print("Confusion Matrix:")
+    print(result['confusion_matrix'])
+    print("Classification Report:")
+    print(pd.DataFrame(result['classification_report']).T)
+    
+    # Confusion matrix heatmap
+    plt.figure(figsize=(5,4))
+    sns.heatmap(result['confusion_matrix'], annot=True, fmt="d", cmap="Blues",
+                xticklabels=target_names, yticklabels=target_names)
+    plt.title(f"{name} - Confusion Matrix")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.tight_layout()
+    plt.show()
